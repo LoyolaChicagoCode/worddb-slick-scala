@@ -7,6 +7,8 @@ import scala.util.Using
 
 object SlickStuff extends App {
 
+  private val logger = org.log4s.getLogger
+
   // set up EC based on non-daemon executor
   val executor = Executors.newSingleThreadExecutor()
   implicit val context = ExecutionContext.fromExecutor(executor)
@@ -18,6 +20,16 @@ object SlickStuff extends App {
     override def * = (id, count)
   }
 
+/*
+  --database name of database
+  --add-word word  adds a word to the database of words with count 0
+  --delete-word word deletes word, if present
+  --inc-word-count word increments
+  --dec-word-count word decrements
+  --show-word-counts
+  --find-in-word substring
+*/
+
   // Scala equivalent of try-with-resource for auto-closing db
   val t = Using(Database.forConfig("h2file1")) { db =>
     val f = for { () <- Future.unit // point for comprehension to the right monad
@@ -26,12 +38,12 @@ object SlickStuff extends App {
       words = TableQuery[Words]
       setup = DBIO.seq(words.schema.create)
       () <- db.run(setup)
-      () = println("+created schema")
+      () = logger.info("created schema")
 
       // insert a few rows
       insert = words ++= Seq("hello", "world", "what", "up").zip(Iterator.continually(0))
       Some(count) <- db.run(insert)
-      () = println(f"+inserted $count items")
+      () = logger.info(f"inserted $count items")
 
       // DONE second column for count
       // DONE? rewrite to avoid looking like premature optimization
@@ -40,14 +52,15 @@ object SlickStuff extends App {
       // TODO switch to logging
 
       // perform query
-      r <- db.run(words.result).map(_.foreach(println))
+      r <- db.run(words.result).map(_.foreach(w => logger.info(w.toString)))
 
     } yield r
-    println("+waiting")
+    
+    logger.info("waiting")
     Await.result(f, Duration.Inf)
   }
 
-  println(f"+result: $t")
+  logger.info(f"result: $t")
   executor.shutdown()
-  println("+done")
+  logger.info("done")
 }
