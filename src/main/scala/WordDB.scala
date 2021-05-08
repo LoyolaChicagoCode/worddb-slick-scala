@@ -6,15 +6,13 @@ import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration.Duration
 import scala.util.Using
 
-/*
---database name of database
---add-word word  adds a word to the database of words with count 0
---delete-word word deletes word, if present
---inc-word-count word increments
---dec-word-count word decrements
---show-word-counts
---find-in-word substring
-*/
+// --database name of database
+// --add-word word  adds a word to the database of words with count 0
+// --delete-word word deletes word, if present
+// --inc-word-count word increments
+// --dec-word-count word decrements
+// --show-word-counts
+// --find-in-word substring
 
 case class Options(
   @ExtraName("f") database: Option[String],
@@ -25,12 +23,13 @@ case class Options(
   @ExtraName("s") showWordCounts: Boolean = false,
   @ExtraName("w") findInWord: Option[String])
 
-object SlickStuff extends CaseApp[Options] {
+object WordDB extends CaseApp[Options] {
 
   private val logger = org.log4s.getLogger
 
   // set up EC based on non-daemon executor
   val executor = Executors.newSingleThreadExecutor()
+  // define context used by futures
   implicit val context = ExecutionContext.fromExecutor(executor)
 
   class Words(tag: Tag) extends Table[(String, Int)](tag, "WORDS") {
@@ -45,7 +44,7 @@ object SlickStuff extends CaseApp[Options] {
     logger.info(remainingArgs.toString)
 
     // Scala equivalent of try-with-resource for auto-closing db
-    val t = Using(Database.forConfig("h2file1")) { db =>
+    val count = Using(Database.forConfig("h2file1")) { db =>
       val f = for {
         () <- Future.unit // point for comprehension to the right monad
 
@@ -61,21 +60,24 @@ object SlickStuff extends CaseApp[Options] {
         () = logger.info(f"inserted $count items")
 
         // DONE second column for count
-        // DONE? rewrite to avoid looking like premature optimization
+        // DONE rewrite to avoid looking like premature optimization
+        // DONE switch to logging
         // TODO update count
         // TODO full-text search
-        // TODO switch to logging
+        // TODO try with sqlite3
+        // TODO architect as CRUD API (DAO) + CLI
 
         // perform query
-        r <- db.run(words.result).map(_.foreach(w => logger.info(w.toString)))
+        () <- db.run(words.result).map(_.foreach(w => logger.info(w.toString)))
 
-      } yield r
+      } yield count
 
       logger.info("waiting")
       Await.result(f, Duration.Inf)
     }
 
-    logger.info(f"result: $t")
+    logger.info(f"result: $count")
+    // shut down non-daemon executor to allow main to complete
     executor.shutdown()
     logger.info("done")
   }
