@@ -1,6 +1,6 @@
 version := "0.0.1"
 
-name := "slick-explorations-scala"
+name := "worddb-slick-scala"
 
 scalaVersion := "2.13.5"
 
