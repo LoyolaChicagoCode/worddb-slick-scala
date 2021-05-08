@@ -6,22 +6,17 @@ import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration.Duration
 import scala.util.Using
 
-// --database name of database
-// --add-word word  adds a word to the database of words with count 0
-// --delete-word word deletes word, if present
-// --inc-word-count word increments
-// --dec-word-count word decrements
-// --show-word-counts
-// --find-in-word substring
-
+@AppName("WordDB")
+@AppVersion("0.1.0")
+@ProgName("word-db")
 case class Options(
-  @ExtraName("f") database: Option[String],
-  @ExtraName("a") addWord: Option[String],
-  @ExtraName("x") deleteWord: Option[String],
-  @ExtraName("i") incWordCount: Option[String],
-  @ExtraName("d") decWordCount: Option[String],
-  @ExtraName("s") showWordCounts: Boolean = false,
-  @ExtraName("w") findInWord: Option[String])
+  @HelpMessage("name of database")@ExtraName("f") database: Option[String],
+  @HelpMessage("adds a word to the database of words with count 0")@ExtraName("a") addWord: Option[String],
+  @HelpMessage("deletes word if present")@ExtraName("x") deleteWord: Option[String],
+  @HelpMessage("increments word count")@ExtraName("i") incWordCount: Option[String],
+  @HelpMessage("increments word count")@ExtraName("d") decWordCount: Option[String],
+  @HelpMessage("shows all words with their counts")@ExtraName("s") showWordCounts: Boolean = false,
+  @HelpMessage("finds substring in any words and lists matches")@ExtraName("w") findInWord: Option[String])
 
 object WordDB extends CaseApp[Options] {
 
