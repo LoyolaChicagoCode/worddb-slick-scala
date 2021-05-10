@@ -35,96 +35,58 @@ trait DAO {
     override def * = (id, count)
   }
 
+  val words = TableQuery[Words]
+
   protected def close(): Unit = {
     // shut down non-daemon executor to allow main to complete
     executor.shutdown()
     logger.info("done")
   }
 
-  //  protected def dbWrapper[R](action: Database => R): R = {
-  //    action()
-  //  }
+  protected def dbWrapper[R](action: Database => Future[R]): Try[R] = {
+    val result = Using(Database.forConfig("sqlite")) { db =>
+      val f = action(db)
+      logger.info("waiting")
+      Await.result(f, Duration.Inf)
+    }
+    close()
+    result
+  }
 
-  def createDatabase(): Unit = {
+  def createDatabase(): Unit = dbWrapper { db =>
     // Scala equivalent of try-with-resource for auto-closing db
-    Using(Database.forConfig("sqlite")) { db =>
-      val f = for {
-        () <- Future.unit // point for comprehension to the right monad
-
-        // create table(s)
-        words = TableQuery[Words]
-        setup = DBIO.seq(words.schema.create)
-        () <- db.run(setup)
-        () = logger.info("created schema")
-
-      } yield ()
-
-      logger.info("waiting")
-      Await.result(f, Duration.Inf)
-    }
-
-    close()
+    for {
+      () <- db.run {
+        DBIO.seq(words.schema.create)
+      }
+      () = logger.info("created schema")
+    } yield ()
   }
 
-  def showWordCounts(): Try[Seq[(String, Int)]] = {
-    // Scala equivalent of try-with-resource for auto-closing db
-    val rows = Using(Database.forConfig("sqlite")) { db =>
-      val f = for {
-        () <- Future.unit // point for comprehension to the right monad
-
-        // create table(s)
-        words = TableQuery[Words]
-        rows <- db.run(words.result)
-
-      } yield rows
-
-      logger.info("waiting")
-      Await.result(f, Duration.Inf)
-    }
-
-    close()
-    rows
+  def showWordCounts(): Try[Seq[(String, Int)]] = dbWrapper { db =>
+    for {
+      rows <- db.run {
+        words.result
+      }
+      () = logger.info(f"retrieved rows $rows")
+    } yield rows
   }
 
-  def addWord(word: String): Unit = {
-    Using(Database.forConfig("sqlite")) { db =>
-      val f = for {
-        () <- Future.unit // point for comprehension to the right monad
-
-        // delete matching row
-        words = TableQuery[Words]
-        insert = words += ((word, 0))
-        count <- db.run(insert)
-        () = logger.info(f"inserted $count word(s)")
-
-      } yield count
-
-      logger.info("waiting")
-      Await.result(f, Duration.Inf)
-    }
-
-    logger.info(f"addWord $word")
-    close()
+  def addWord(word: String): Unit = dbWrapper { db =>
+    for {
+      count <- db.run {
+        words += ((word, 0))
+      }
+      () = logger.info(f"inserted $count word(s)")
+    } yield count
   }
 
-  def deleteWord(word: String): Unit = {
-    val count = Using(Database.forConfig("sqlite")) { db =>
-      val f = for {
-        () <- Future.unit // point for comprehension to the right monad
-
-        // delete matching row
-        words = TableQuery[Words]
-        delete = words.filter(_.id === word).delete
-        count <- db.run(delete)
-        () = logger.info(f"deleted $count word(s)")
-
-      } yield count
-
-      logger.info("waiting")
-      Await.result(f, Duration.Inf)
-    }
-
-    logger.info(f"result: $count")
-    close()
+  def deleteWord(word: String): Unit = dbWrapper { db =>
+    for {
+      count <- db.run {
+        words.filter(_.id === word).delete
+      }
+      () = logger.info(f"deleted $count word(s)")
+    } yield count
   }
 }

@@ -10,10 +10,10 @@ case class Options(
     database: Option[String],
   @HelpMessage("create database")
   @ExtraName("c")
-  createDatabase: Boolean = false,
+    createDatabase: Boolean = false,
   @HelpMessage("shows all words with their counts")
   @ExtraName("s")
-  showWordCounts: Boolean = false,
+    showWordCounts: Boolean = false,
   @HelpMessage("adds a word to the database of words with count 0")
   @ExtraName("a")
     addWord: Option[String],
