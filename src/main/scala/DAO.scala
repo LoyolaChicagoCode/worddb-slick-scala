@@ -3,7 +3,7 @@ import slick.sql.SqlProfile.ColumnOption.SqlType
 
 import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.{ Await, ExecutionContext }
 import scala.util.{ Try, Using }
 
 // DONE second column for count
@@ -11,10 +11,10 @@ import scala.util.{ Try, Using }
 // DONE switch to logging
 // DONE architect as CRUD API (DAO) + CLI
 // DONE try with sqlite3 -> works!
+// DONE make DB methods DRY
 // TODO update count
 // TODO full-text search
 // TODO factor out row type
-// TODO make DB methods DRY
 
 trait DAO {
 
@@ -37,56 +37,35 @@ trait DAO {
 
   val words = TableQuery[Words]
 
-  protected def close(): Unit = {
+  def createDatabase(): Try[Unit] = dbWrapper {
+    DBIO.seq(words.schema.create)
+  }
+
+  def showWordCounts(): Try[Seq[(String, Int)]] = dbWrapper {
+    words.result
+  }
+
+  def addWord(word: String): Try[Int] = dbWrapper {
+    words += ((word, 0))
+  }
+
+  def deleteWord(word: String): Try[Int] = dbWrapper {
+    words.filter(_.id === word).delete
+  }
+
+  protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
+    // Scala equivalent of try-with-resource for auto-closing db
+    val result = Using(Database.forConfig("sqlite")) { db =>
+      val f = for {
+        r <- db.run(action)
+        () = logger.info(f"completed action with result $r")
+      } yield r
+      logger.info("waiting for future to complete")
+      Await.result(f, Duration.Inf)
+    }
     // shut down non-daemon executor to allow main to complete
     executor.shutdown()
     logger.info("done")
-  }
-
-  protected def dbWrapper[R](action: Database => Future[R]): Try[R] = {
-    val result = Using(Database.forConfig("sqlite")) { db =>
-      val f = action(db)
-      logger.info("waiting")
-      Await.result(f, Duration.Inf)
-    }
-    close()
     result
-  }
-
-  def createDatabase(): Unit = dbWrapper { db =>
-    // Scala equivalent of try-with-resource for auto-closing db
-    for {
-      () <- db.run {
-        DBIO.seq(words.schema.create)
-      }
-      () = logger.info("created schema")
-    } yield ()
-  }
-
-  def showWordCounts(): Try[Seq[(String, Int)]] = dbWrapper { db =>
-    for {
-      rows <- db.run {
-        words.result
-      }
-      () = logger.info(f"retrieved rows $rows")
-    } yield rows
-  }
-
-  def addWord(word: String): Unit = dbWrapper { db =>
-    for {
-      count <- db.run {
-        words += ((word, 0))
-      }
-      () = logger.info(f"inserted $count word(s)")
-    } yield count
-  }
-
-  def deleteWord(word: String): Unit = dbWrapper { db =>
-    for {
-      count <- db.run {
-        words.filter(_.id === word).delete
-      }
-      () = logger.info(f"deleted $count word(s)")
-    } yield count
   }
 }
