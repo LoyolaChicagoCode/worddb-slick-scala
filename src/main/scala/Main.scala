@@ -8,6 +8,12 @@ case class Options(
   @HelpMessage("name of database")
   @ExtraName("f")
     database: Option[String],
+  @HelpMessage("create database")
+  @ExtraName("c")
+  createDatabase: Boolean = false,
+  @HelpMessage("shows all words with their counts")
+  @ExtraName("s")
+  showWordCounts: Boolean = false,
   @HelpMessage("adds a word to the database of words with count 0")
   @ExtraName("a")
     addWord: Option[String],
@@ -20,9 +26,6 @@ case class Options(
   @HelpMessage("increments word count")
   @ExtraName("d")
     decWordCount: Option[String],
-  @HelpMessage("shows all words with their counts")
-  @ExtraName("s")
-    showWordCounts: Boolean = false,
   @HelpMessage("finds substring in any words and lists matches")
   @ExtraName("w")
     findInWord: Option[String])
@@ -39,22 +42,23 @@ object Main extends CaseApp[Options] {
     logger.info(options.toString)
     logger.info(remainingArgs.toString)
 
-    val dbName = options match {
-      case Options(Some(dbName), _, _, _, _, _, _) => dbName
+    val db = options match {
+      case Options(Some(dbName), _, _, _, _, _, _, _) => dbName
       case _ => DEFAULT_DBNAME
     }
 
-    logger.info(f"dbname = $dbName")
+    logger.info(f"dbname = $db")
 
-    val command = options match {
-      case Options(_, Some(word), _, _, _, _, _) => "add " + word
-      case Options(_, _, Some(word), _, _, _, _) => "delete " + word
+    val dao = new DAO { override val dbName = db }
+
+    val result = options match {
+      case Options(_, true, _, _, _, _, _, _) => dao.createDatabase()
+      case Options(_, _, true, _, _, _, _, _) => dao.showWordCounts()
+      case Options(_, _, _, Some(word), _, _, _, _) => dao.addWord(word)
+      case Options(_, _, _, _, Some(word), _, _, _) => dao.deleteWord(word)
       case _ => "unsupported command"
     }
 
-    logger.info(f"command = $command")
-
-    // TODO flesh out DAO and map commands to methods
-    new DAO {}.doSomething()
+    logger.info(f"result = $result")
   }
 }

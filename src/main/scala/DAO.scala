@@ -1,11 +1,23 @@
-import slick.jdbc.H2Profile.api._
+import slick.jdbc.SQLiteProfile.api._
 
 import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContext, Future }
-import scala.util.Using
+import scala.util.{ Try, Using }
+
+// DONE second column for count
+// DONE rewrite to avoid looking like premature optimization
+// DONE switch to logging
+// DONE architect as CRUD API (DAO) + CLI
+// DONE try with sqlite3 -> works!
+// TODO update count
+// TODO full-text search
+// TODO factor out row type
+// TODO make DB methods DRY
 
 trait DAO {
+
+  val dbName: String
 
   private val logger = org.log4s.getLogger
 
@@ -22,10 +34,19 @@ trait DAO {
     override def * = (id, count)
   }
 
-  def doSomething(): Unit = {
+  protected def close(): Unit = {
+    // shut down non-daemon executor to allow main to complete
+    executor.shutdown()
+    logger.info("done")
+  }
 
+  //  protected def dbWrapper[R](action: Database => R): R = {
+  //    action()
+  //  }
+
+  def createDatabase(): Unit = {
     // Scala equivalent of try-with-resource for auto-closing db
-    val count = Using(Database.forConfig("h2file1")) { db =>
+    Using(Database.forConfig("sqlite")) { db =>
       val f = for {
         () <- Future.unit // point for comprehension to the right monad
 
@@ -35,21 +56,66 @@ trait DAO {
         () <- db.run(setup)
         () = logger.info("created schema")
 
-        // insert a few rows
-        insert = words ++= Seq("hello", "world", "what", "up").zip(Iterator.continually(0))
-        Some(count) <- db.run(insert)
-        () = logger.info(f"inserted $count items")
+      } yield ()
 
-        // DONE second column for count
-        // DONE rewrite to avoid looking like premature optimization
-        // DONE switch to logging
-        // TODO update count
-        // TODO full-text search
-        // TODO try with sqlite3
-        // TODO architect as CRUD API (DAO) + CLI
+      logger.info("waiting")
+      Await.result(f, Duration.Inf)
+    }
 
-        // perform query
-        () <- db.run(words.result).map(_.foreach(w => logger.info(w.toString)))
+    close()
+  }
+
+  def showWordCounts(): Try[Seq[(String, Int)]] = {
+    // Scala equivalent of try-with-resource for auto-closing db
+    val rows = Using(Database.forConfig("sqlite")) { db =>
+      val f = for {
+        () <- Future.unit // point for comprehension to the right monad
+
+        // create table(s)
+        words = TableQuery[Words]
+        rows <- db.run(words.result)
+
+      } yield rows
+
+      logger.info("waiting")
+      Await.result(f, Duration.Inf)
+    }
+
+    close()
+    rows
+  }
+
+  def addWord(word: String): Unit = {
+    Using(Database.forConfig("sqlite")) { db =>
+      val f = for {
+        () <- Future.unit // point for comprehension to the right monad
+
+        // delete matching row
+        words = TableQuery[Words]
+        insert = words += ((word, 0))
+        count <- db.run(insert)
+        () = logger.info(f"inserted $count word(s)")
+
+      } yield count
+
+      logger.info("waiting")
+      Await.result(f, Duration.Inf)
+    }
+
+    logger.info(f"addWord $word")
+    close()
+  }
+
+  def deleteWord(word: String): Unit = {
+    val count = Using(Database.forConfig("sqlite")) { db =>
+      val f = for {
+        () <- Future.unit // point for comprehension to the right monad
+
+        // delete matching row
+        words = TableQuery[Words]
+        delete = words.filter(_.id === word).delete
+        count <- db.run(delete)
+        () = logger.info(f"deleted $count word(s)")
 
       } yield count
 
@@ -58,8 +124,6 @@ trait DAO {
     }
 
     logger.info(f"result: $count")
-    // shut down non-daemon executor to allow main to complete
-    executor.shutdown()
-    logger.info("done")
+    close()
   }
 }
