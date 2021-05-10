@@ -1,4 +1,5 @@
 import slick.jdbc.SQLiteProfile.api._
+import slick.sql.SqlProfile.ColumnOption.SqlType
 
 import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
@@ -27,7 +28,7 @@ trait DAO {
   implicit val context = ExecutionContext.fromExecutor(executor)
 
   class Words(tag: Tag) extends Table[(String, Int)](tag, "WORDS") {
-    def id = column[String]("WORD", O.PrimaryKey)
+    def id = column[String]("WORD", O.PrimaryKey, SqlType("TEXT"))
 
     def count = column[Int]("COUNT")
 
