@@ -3,8 +3,8 @@ import slick.sql.SqlProfile.ColumnOption.SqlType
 
 import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext }
-import scala.util.{ Try, Using }
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Try, Using}
 
 // DONE second column for count
 // DONE rewrite to avoid looking like premature optimization
@@ -19,11 +19,6 @@ import scala.util.{ Try, Using }
 class DAO(val dbName: String) {
 
   private val logger = org.log4s.getLogger
-
-  // set up EC based on non-daemon executor
-  val executor = Executors.newSingleThreadExecutor()
-  // define context used by futures
-  implicit val context = ExecutionContext.fromExecutor(executor)
 
   class Words(tag: Tag) extends Table[(String, Int)](tag, "WORDS") {
     def id = column[String]("WORD", O.PrimaryKey, SqlType("TEXT"))
@@ -64,18 +59,29 @@ class DAO(val dbName: String) {
   }
 
   protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
+    // set up EC based on non-daemon executor
+    val executor = Executors.newSingleThreadExecutor()
+    // define context used by futures
+    implicit val context = ExecutionContext.fromExecutor(executor)
+
     // Scala equivalent of try-with-resource for auto-closing db
     val result = Using(Database.forConfig("sqlite")) { db =>
       val f = for {
+        // point for comprehension to the right monad
+        () <- Future.unit
+        () = logger.debug(f"attempting action")
+        // perform action on database
         r <- db.run(action)
-        () = logger.info(f"completed action with result $r")
+        () = logger.debug(f"completed action with result $r")
       } yield r
-      logger.info("waiting for future to complete")
+
+      logger.debug("waiting for future to complete")
       Await.result(f, Duration.Inf)
     }
+
     // shut down non-daemon executor to allow main to complete
     executor.shutdown()
-    logger.info("done")
+    logger.debug(f"returning result $result")
     result
   }
 }
