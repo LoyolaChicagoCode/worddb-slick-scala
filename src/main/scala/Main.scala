@@ -53,6 +53,7 @@ object Main extends CaseApp[Options] {
 
     val dao = new DAO(dbPath)
 
+    // TODO figure out how to go from a positional to a named representation of actual options
     val result = options match {
       case Options(_, true, _, _, _, _, _, _) => dao.createDatabase()
       case Options(_, _, true, _, _, _, _, _) => dao.showWordCounts()
@@ -64,6 +65,7 @@ object Main extends CaseApp[Options] {
       case _ => Failure(new IllegalArgumentException("more than one command given"))
     }
 
+    // TODO user-facing output
     logger.info(f"result = $result")
   }
 }
