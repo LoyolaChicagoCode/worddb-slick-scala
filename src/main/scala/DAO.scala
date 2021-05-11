@@ -58,6 +58,15 @@ class DAO(val dbName: String) {
     ???
   }
 
+  /**
+   * Performs a database action in a future and with logging.
+   * This wrapper method keeps the public DAO methods very DRY.
+   * @param action the database action
+   * @tparam R result type of the database action
+   * @tparam S item type of the stream, if any
+   * @tparam E effect type
+   * @return result of the action
+   */
   protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
     // set up execution context for futures based on non-daemon executor
     val executor = Executors.newSingleThreadExecutor()
