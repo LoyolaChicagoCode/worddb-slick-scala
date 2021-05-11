@@ -58,8 +58,8 @@ object Main extends CaseApp[Options] {
       case Options(_, _, true, _, _, _, _, _) => dao.showWordCounts()
       case Options(_, _, _, Some(word), _, _, _, _) => dao.addWord(word)
       case Options(_, _, _, _, Some(word), _, _, _) => dao.deleteWord(word)
-      case Options(_, _, _, _, _, Some(word), _, _) => dao.incrementWordCount(word)
-      case Options(_, _, _, _, _, _, Some(word), _) => dao.decrementWordCount(word)
+      case Options(_, _, _, _, _, Some(word), _, _) => dao.incWordCount(word)
+      case Options(_, _, _, _, _, _, Some(word), _) => dao.decWordCount(word)
       case Options(_, _, _, _, _, _, _, Some(text)) => dao.findInWords(text)
       case _ => Failure(new IllegalArgumentException("more than one command given"))
     }

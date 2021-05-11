@@ -3,8 +3,8 @@ import slick.sql.SqlProfile.ColumnOption.SqlType
 
 import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Try, Using}
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.util.{ Try, Using }
 
 // DONE second column for count
 // DONE rewrite to avoid looking like premature optimization
@@ -12,7 +12,8 @@ import scala.util.{Try, Using}
 // DONE architect as CRUD API (DAO) + CLI
 // DONE try with sqlite3 -> works!
 // DONE make DB methods DRY
-// TODO update count
+// DONE update count
+// TODO programmatically set DB name
 // TODO full-text search
 // TODO factor out row type
 
@@ -46,12 +47,12 @@ class DAO(val dbName: String) {
     words.filter(_.id === word).delete
   }
 
-  def incrementWordCount(word: String): Try[Unit] = dbWrapper {
-    ???
+  def incWordCount(word: String): Try[Int] = dbWrapper {
+    sqlu"UPDATE words SET count = count + 1 WHERE word = $word"
   }
 
-  def decrementWordCount(word: String): Try[Unit] = dbWrapper {
-    ???
+  def decWordCount(word: String): Try[Int] = dbWrapper {
+    sqlu"UPDATE words SET count = count - 1 WHERE word = $word and count > 0"
   }
 
   def findInWords(text: String): Try[Seq[(String, Int)]] = dbWrapper {
