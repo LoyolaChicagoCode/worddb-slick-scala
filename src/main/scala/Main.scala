@@ -37,21 +37,21 @@ object Main extends CaseApp[Options] {
 
   private val logger = org.log4s.getLogger
 
-  val DEFAULT_DBNAME = "word-db"
+  val DEFAULT_DBNAME = "word-db.db"
 
   override def run(options: Options, remainingArgs: RemainingArgs): Unit = {
 
     logger.info(options.toString)
     logger.info(remainingArgs.toString)
 
-    val dbName = options match {
+    val dbPath = options match {
       case Options(Some(dbName), _, _, _, _, _, _, _) => dbName
       case _ => DEFAULT_DBNAME
     }
 
-    logger.info(f"dbname = $dbName")
+    logger.info(f"dbname = $dbPath")
 
-    val dao = new DAO(dbName)
+    val dao = new DAO(dbPath)
 
     val result = options match {
       case Options(_, true, _, _, _, _, _, _) => dao.createDatabase()

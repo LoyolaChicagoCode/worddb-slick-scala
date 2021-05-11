@@ -13,15 +13,21 @@ import scala.util.{ Try, Using }
 // DONE try with sqlite3 -> works!
 // DONE make DB methods DRY
 // DONE update count
-// TODO programmatically set DB name
+// DONE programmatically set DB name
 // TODO full-text search
 // TODO factor out row type
 
-class DAO(val dbName: String) {
+object DAO {
+  type Row = (String, Int)
+}
+
+class DAO(val dbPath: String) {
+
+  import DAO.Row
 
   private val logger = org.log4s.getLogger
 
-  class Words(tag: Tag) extends Table[(String, Int)](tag, "WORDS") {
+  class Words(tag: Tag) extends Table[Row](tag, "WORDS") {
     def id = column[String]("WORD", O.PrimaryKey, SqlType("TEXT"))
 
     def count = column[Int]("COUNT")
@@ -31,11 +37,13 @@ class DAO(val dbName: String) {
 
   val words = TableQuery[Words]
 
+  val config = Database.forURL(f"jdbc:sqlite:$dbPath")
+
   def createDatabase(): Try[Unit] = dbWrapper {
     DBIO.seq(words.schema.create)
   }
 
-  def showWordCounts(): Try[Seq[(String, Int)]] = dbWrapper {
+  def showWordCounts(): Try[Seq[Row]] = dbWrapper {
     words.result
   }
 
@@ -55,7 +63,7 @@ class DAO(val dbName: String) {
     sqlu"UPDATE words SET count = count - 1 WHERE word = $word and count > 0"
   }
 
-  def findInWords(text: String): Try[Seq[(String, Int)]] = dbWrapper {
+  def findInWords(text: String): Try[Seq[Row]] = dbWrapper {
     ???
   }
 
@@ -75,7 +83,7 @@ class DAO(val dbName: String) {
     implicit val context = ExecutionContext.fromExecutor(executor)
 
     // Scala equivalent of try-with-resource for auto-closing db
-    val result = Using(Database.forConfig("sqlite")) { db =>
+    val result = Using(config) { db =>
       val f = for {
         // start by pointing for comprehension to desired monad, i.e., Future
         // <- is a monadic binding, = a val binding
