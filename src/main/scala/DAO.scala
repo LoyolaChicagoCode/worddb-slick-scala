@@ -76,7 +76,7 @@ class DAO(val dbName: String) {
     // Scala equivalent of try-with-resource for auto-closing db
     val result = Using(Database.forConfig("sqlite")) { db =>
       val f = for {
-        // point for comprehension to desired monad, i.e., Future
+        // start by pointing for comprehension to desired monad, i.e., Future
         // using () unit pattern on left instead of _ or unused variable
         () <- Future.unit
         () = logger.debug(f"attempting action")
