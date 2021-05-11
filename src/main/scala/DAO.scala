@@ -15,6 +15,7 @@ import scala.util.{ Try, Using }
 // DONE update count
 // DONE programmatically set DB name
 // DONE factor out row type
+// TODO review decWordCount
 // TODO full-text search
 // TODO use strategies for supporting different databases
 
@@ -49,7 +50,7 @@ class DAO(val dbPath: String) {
   }
 
   def addWord(word: String): Try[Int] = dbWrapper {
-    words += ((word, 0))
+    words += ((word, 1))
   }
 
   def deleteWord(word: String): Try[Int] = dbWrapper {
@@ -61,7 +62,10 @@ class DAO(val dbPath: String) {
   }
 
   def decWordCount(word: String): Try[Int] = dbWrapper {
-    sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0"
+    sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0".andThen {
+      words.filter(row => row.id === word && row.count === 0).delete
+//      sqlu"DELETE FROM words WHERE word = $word AND count = 0"
+    }.transactionally
   }
 
   def findInWords(text: String): Try[Seq[Row]] = dbWrapper {
