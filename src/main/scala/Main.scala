@@ -44,14 +44,14 @@ object Main extends CaseApp[Options] {
     logger.info(options.toString)
     logger.info(remainingArgs.toString)
 
-    val db = options match {
+    val dbName = options match {
       case Options(Some(dbName), _, _, _, _, _, _, _) => dbName
       case _ => DEFAULT_DBNAME
     }
 
-    logger.info(f"dbname = $db")
+    logger.info(f"dbname = $dbName")
 
-    val dao = new DAO { override val dbName = db }
+    val dao = new DAO(dbName)
 
     val result = options match {
       case Options(_, true, _, _, _, _, _, _) => dao.createDatabase()

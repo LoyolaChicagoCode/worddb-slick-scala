@@ -16,9 +16,7 @@ import scala.util.{ Try, Using }
 // TODO full-text search
 // TODO factor out row type
 
-trait DAO {
-
-  val dbName: String
+class DAO(val dbName: String) {
 
   private val logger = org.log4s.getLogger
 
