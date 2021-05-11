@@ -64,7 +64,7 @@ class DAO(val dbPath: String) {
   def decWordCount(word: String): Try[Int] = dbWrapper {
     sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0".andThen {
       words.filter(row => row.id === word && row.count === 0).delete
-//      sqlu"DELETE FROM words WHERE word = $word AND count = 0"
+      // sqlu"DELETE FROM words WHERE word = $word AND count = 0"
     }.transactionally
   }
 
