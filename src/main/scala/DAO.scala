@@ -66,7 +66,7 @@ class DAO(val dbName: String) {
    * @tparam R result type of the database action
    * @tparam S item type of the stream, if any
    * @tparam E effect type
-   * @return result of the action
+   * @return result of the action, with the possibility of failure
    */
   protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
     // set up execution context for futures based on non-daemon executor
