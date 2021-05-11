@@ -59,9 +59,8 @@ class DAO(val dbName: String) {
   }
 
   protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
-    // set up EC based on non-daemon executor
+    // set up execution context for futures based on non-daemon executor
     val executor = Executors.newSingleThreadExecutor()
-    // define context used by futures
     implicit val context = ExecutionContext.fromExecutor(executor)
 
     // Scala equivalent of try-with-resource for auto-closing db
