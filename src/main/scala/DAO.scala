@@ -77,6 +77,7 @@ class DAO(val dbName: String) {
     val result = Using(Database.forConfig("sqlite")) { db =>
       val f = for {
         // start by pointing for comprehension to desired monad, i.e., Future
+        // <- is a monadic binding, = a val binding
         // using () unit pattern on left instead of _ or unused variable
         () <- Future.unit
         () = logger.debug(f"attempting action")
