@@ -1,5 +1,7 @@
 import caseapp._
 
+import scala.util.Failure
+
 // format: OFF
 @AppName("WordDB")
 @AppVersion("0.1.0")
@@ -23,7 +25,7 @@ case class Options(
   @HelpMessage("increments word count")
   @ExtraName("i")
     incWordCount: Option[String],
-  @HelpMessage("increments word count")
+  @HelpMessage("decrements word count")
   @ExtraName("d")
     decWordCount: Option[String],
   @HelpMessage("finds substring in any words and lists matches")
@@ -56,7 +58,10 @@ object Main extends CaseApp[Options] {
       case Options(_, _, true, _, _, _, _, _) => dao.showWordCounts()
       case Options(_, _, _, Some(word), _, _, _, _) => dao.addWord(word)
       case Options(_, _, _, _, Some(word), _, _, _) => dao.deleteWord(word)
-      case _ => "unsupported command"
+      case Options(_, _, _, _, _, Some(word), _, _) => dao.incrementWordCount(word)
+      case Options(_, _, _, _, _, _, Some(word), _) => dao.decrementWordCount(word)
+      case Options(_, _, _, _, _, _, _, Some(text)) => dao.findInWords(text)
+      case _ => Failure(new IllegalArgumentException("more than one command given"))
     }
 
     logger.info(f"result = $result")

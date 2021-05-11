@@ -53,6 +53,18 @@ trait DAO {
     words.filter(_.id === word).delete
   }
 
+  def incrementWordCount(word: String): Try[Unit] = dbWrapper {
+    ???
+  }
+
+  def decrementWordCount(word: String): Try[Unit] = dbWrapper {
+    ???
+  }
+
+  def findInWords(text: String): Try[Seq[(String, Int)]] = dbWrapper {
+    ???
+  }
+
   protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
     // Scala equivalent of try-with-resource for auto-closing db
     val result = Using(Database.forConfig("sqlite")) { db =>
