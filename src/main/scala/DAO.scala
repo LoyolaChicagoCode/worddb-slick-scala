@@ -61,7 +61,7 @@ class DAO(val dbName: String) {
   /**
    * Performs a database action in a future and with logging.
    * This wrapper method keeps the public DAO methods very DRY.
-   * The main challenge was to figure out the correct type parameterization.
+   * The main challenge was to figure out the correct type parameters including upper bounds.
    * @param action the database action
    * @tparam R result type of the database action
    * @tparam S item type of the stream, if any
