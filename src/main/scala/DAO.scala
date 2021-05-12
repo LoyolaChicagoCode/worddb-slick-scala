@@ -3,7 +3,7 @@ import slick.sql.SqlProfile.ColumnOption.SqlType
 
 import java.util.concurrent.Executors
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.util.Try
 
 // DONE second column for count

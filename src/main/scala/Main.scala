@@ -48,26 +48,28 @@ object Main extends CaseApp[Options] {
       case Options(Some(dbName), _, _, _, _, _, _, _) => dbName
       case _ => DEFAULT_DBNAME
     }
-
     logger.info(f"dbname = $dbPath")
 
+    // TODO use Using with resource
     val dao = new DAO("default")
 
     // TODO figure out how to go from a positional to a named representation of actual options
+    // val optionsMap = options.productElementNames.zip(options.productIterator).filter { case (_, None) => false case _ => true }.toMap
 
+    // format: OFF
     val result = options match {
-      case Options(_, true, _, _, _, _, _, _) => dao.createDatabase()
-      case Options(_, _, true, _, _, _, _, _) => dao.showWordCounts()
-      case Options(_, _, _, Some(word), _, _, _, _) => dao.addWord(word)
-      case Options(_, _, _, _, Some(word), _, _, _) => dao.deleteWord(word)
-      case Options(_, _, _, _, _, Some(word), _, _) => dao.incWordCount(word)
-      case Options(_, _, _, _, _, _, Some(word), _) => dao.decWordCount(word)
-      case Options(_, _, _, _, _, _, _, Some(text)) => dao.findInWords(text)
+      case Options(_, true,  false, None, None, None, None, None)       => dao.createDatabase()
+      case Options(_, false, true,  None, None, None, None, None)       => dao.showWordCounts()
+      case Options(_, false, false, Some(word), None, None, None, None) => dao.addWord(word)
+      case Options(_, false, false, None, Some(word), None, None, None) => dao.deleteWord(word)
+      case Options(_, false, false, None, None, Some(word), None, None) => dao.incWordCount(word)
+      case Options(_, false, false, None, None, None, Some(word), None) => dao.decWordCount(word)
+      case Options(_, false, false, None, None, None, None, Some(text)) => dao.findInWords(text)
       case _ => Failure(new IllegalArgumentException("more than one command given"))
     }
+    // format: ON
 
-    println("options.productIterator = " + options.productIterator.toList)
-    println("options.productElementNames = " + options.productElementNames.toList)
+    dao.close()
 
     // TODO user-facing output
     logger.info(f"result = $result")
