@@ -1,14 +1,12 @@
 class DAOTests extends munit.FunSuite {
 
-  daos.test("Database creation succeeds") { _ =>
-  }
+  daos.test("Database creation succeeds") { _ => }
 
-  daos.test("Database creation succeeds again") { _ =>
-  }
+  daos.test("Database creation succeeds again") { _ => }
 
   daos.test("Database has zero rows after creation") { dao =>
-    assertSuccess {
-      dao.showWordCounts().filter(_.isEmpty)
+    assert {
+      dao.showWordCounts().filter(_.isEmpty).isSuccess
     }
   }
 
@@ -105,11 +103,13 @@ class DAOTests extends munit.FunSuite {
 
   lazy val daos = FunFixture[DAO](
     setup = { test =>
-      val dao = new DAO("memory")
+      val dao = new DAO("test")
       dao.createDatabase()
       dao
     },
-    teardown = { dao => dao.clear() }
+    teardown = {
+      dao => dao.clear()
+    }
   )
 
   // format: OFF
