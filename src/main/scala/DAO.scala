@@ -23,7 +23,7 @@ object DAO {
   type Row = (String, Int)
 }
 
-class DAO(val dbPath: String) {
+class DAO(val dbURL: String) {
 
   import DAO.Row
 
@@ -39,7 +39,7 @@ class DAO(val dbPath: String) {
 
   val words = TableQuery[Words]
 
-  val config = Database.forURL(f"jdbc:sqlite:$dbPath")
+  val config = Database.forURL(dbURL)
 
   def createDatabase(): Try[Unit] = dbWrapper {
     DBIO.seq(words.schema.create)

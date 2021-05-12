@@ -51,7 +51,7 @@ object Main extends CaseApp[Options] {
 
     logger.info(f"dbname = $dbPath")
 
-    val dao = new DAO(dbPath)
+    val dao = new DAO(f"jdbc:sqlite:$dbPath")
 
     // TODO figure out how to go from a positional to a named representation of actual options
     val result = options match {
