@@ -1,11 +1,9 @@
 class DAOTests extends munit.FunSuite {
 
-  daos.test("Database creation succeeds") {
-    Function.const(())
+  daos.test("Database creation succeeds") { _ =>
   }
 
-  daos.test("Database creation succeeds again") {
-    Function.const(())
+  daos.test("Database creation succeeds again") { _ =>
   }
 
   daos.test("Database has zero rows after creation") { dao =>
