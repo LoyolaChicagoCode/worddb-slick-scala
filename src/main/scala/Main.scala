@@ -51,9 +51,10 @@ object Main extends CaseApp[Options] {
 
     logger.info(f"dbname = $dbPath")
 
-    val dao = new DAO(f"jdbc:sqlite:$dbPath")
+    val dao = new DAO("default")
 
     // TODO figure out how to go from a positional to a named representation of actual options
+
     val result = options match {
       case Options(_, true, _, _, _, _, _, _) => dao.createDatabase()
       case Options(_, _, true, _, _, _, _, _) => dao.showWordCounts()
@@ -64,6 +65,9 @@ object Main extends CaseApp[Options] {
       case Options(_, _, _, _, _, _, _, Some(text)) => dao.findInWords(text)
       case _ => Failure(new IllegalArgumentException("more than one command given"))
     }
+
+    println("options.productIterator = " + options.productIterator.toList)
+    println("options.productElementNames = " + options.productElementNames.toList)
 
     // TODO user-facing output
     logger.info(f"result = $result")
