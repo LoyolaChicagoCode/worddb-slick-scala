@@ -1,6 +1,6 @@
 import caseapp._
 
-import scala.util.Failure
+import scala.util.{ Failure, Using }
 
 // format: OFF
 @AppName("WordDB")
@@ -45,31 +45,28 @@ object Main extends CaseApp[Options] {
     logger.info(remainingArgs.toString)
 
     val dbPath = options match {
-      case Options(Some(dbName), _, _, _, _, _, _, _) => dbName
+      case Options(Some(s), _, _, _, _, _, _, _) => s
       case _ => DEFAULT_DBNAME
     }
-    logger.info(f"dbname = $dbPath")
+    logger.info(f"dbPath = $dbPath")
 
-    // TODO use Using with resource
-    val dao = new DAO("default")
-
-    // TODO figure out how to go from a positional to a named representation of actual options
+    // WONTFIX figure out how to go from a positional to a named representation of actual options
     // val optionsMap = options.productElementNames.zip(options.productIterator).filter { case (_, None) => false case _ => true }.toMap
 
-    // format: OFF
-    val result = options match {
-      case Options(_, true,  false, None, None, None, None, None)       => dao.createDatabase()
-      case Options(_, false, true,  None, None, None, None, None)       => dao.showWordCounts()
-      case Options(_, false, false, Some(word), None, None, None, None) => dao.addWord(word)
-      case Options(_, false, false, None, Some(word), None, None, None) => dao.deleteWord(word)
-      case Options(_, false, false, None, None, Some(word), None, None) => dao.incWordCount(word)
-      case Options(_, false, false, None, None, None, Some(word), None) => dao.decWordCount(word)
-      case Options(_, false, false, None, None, None, None, Some(text)) => dao.findInWords(text)
-      case _ => Failure(new IllegalArgumentException("more than one command given"))
+    val result = Using(new DAO(dbPath)) { dao =>
+      // format: OFF
+      options match {
+        case Options(_, true, false,  None, None, None, None, None)       => dao.createDatabase()
+        case Options(_, false, true,  None, None, None, None, None)       => dao.showWordCounts()
+        case Options(_, false, false, Some(word), None, None, None, None) => dao.addWord(word)
+        case Options(_, false, false, None, Some(word), None, None, None) => dao.deleteWord(word)
+        case Options(_, false, false, None, None, Some(word), None, None) => dao.incWordCount(word)
+        case Options(_, false, false, None, None, None, Some(word), None) => dao.decWordCount(word)
+        case Options(_, false, false, None, None, None, None, Some(text)) => dao.findInWords(text)
+        case _ => Failure(new IllegalArgumentException("more than one command given"))
+      }
+      // format: ON
     }
-    // format: ON
-
-    dao.close()
 
     // TODO user-facing output
     logger.info(f"result = $result")
