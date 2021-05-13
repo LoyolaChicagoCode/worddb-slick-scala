@@ -103,14 +103,13 @@ class DAOTests extends munit.FunSuite {
 
   lazy val daos = FunFixture[DAO](
     setup = { test =>
-      val dao = new DAO("test")
+      val dao = new DAO("/tmp/DAOTests.db")
       dao.createDatabase()
       dao
     },
     teardown = {
       dao => dao.clear()
-    }
-  )
+    })
 
   // format: OFF
   def assertSuccess(

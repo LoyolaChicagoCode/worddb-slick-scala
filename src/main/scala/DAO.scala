@@ -19,7 +19,7 @@ import scala.util.Try
 // TODO full-text search
 // TODO use strategies for supporting different databases
 
-class DAO(val dbConfig: String = "default") extends AutoCloseable {
+class DAO(val dbPath: String = "default") extends AutoCloseable {
 
   type Row = (String, Int)
 
@@ -35,7 +35,9 @@ class DAO(val dbConfig: String = "default") extends AutoCloseable {
 
   private val words = TableQuery[Words]
 
-  private val db = Database.forConfig(dbConfig)
+  private val db = Database.forURL(f"jdbc:sqlite:$dbPath")
+
+  logger.debug(db.toString)
 
   def createDatabase(): Try[Unit] = dbWrapper {
     DBIO.seq(words.schema.create)
