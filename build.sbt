@@ -19,3 +19,5 @@ libraryDependencies ++= Seq(
 Test / parallelExecution := false
 
 enablePlugins(JavaAppPackaging)
+
+maintainer := "laufer@cs.luc.edu"

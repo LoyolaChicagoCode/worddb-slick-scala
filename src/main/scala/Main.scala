@@ -28,7 +28,7 @@ case class Options(
   @HelpMessage("decrements word count")
   @ExtraName("d")
     decWordCount: Option[String],
-  @HelpMessage("finds substring in any words and lists matches")
+  @HelpMessage("finds substring in any words and lists matches (NYI)")
   @ExtraName("w")
     findInWord: Option[String])
 // format: ON
