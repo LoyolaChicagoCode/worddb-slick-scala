@@ -62,12 +62,12 @@ object Main extends CaseApp[Options] {
     def p[R](key: String): R => Unit = _ => println(bundle.getString(key))
 
     /** Invokes DAO command and, if successful, prints message for given key. */
-    def c[R](command: DAO => Try[R], key: String): Unit = Using(new DAO(dbPath)) { dao =>
+    def c[R](command: DAO => Try[R], key: String): Unit = Using(new DAOImpl(dbPath)) { dao =>
       command(dao).fold(p("failed"), _ => p(key))
     }
 
     /** Invokes DAO command and, if successful, prints resulting word counts. */
-    def r(command: DAO => Try[Seq[Row]]): Unit = Using(new DAO(dbPath)) { dao =>
+    def q(command: DAO => Try[Seq[Row]]): Unit = Using(new DAOImpl(dbPath)) { dao =>
       command(dao).map(rows => rows.foreach(row => println(row._1 + " -> " + row._2)))
     }
 
@@ -77,7 +77,7 @@ object Main extends CaseApp[Options] {
       case Options(_, true, false, None, None, None, None, None) =>
         c(_.createDatabase(), "created")
       case Options(_, false, true, None, None, None, None, None) =>
-        r(_.showWordCounts())
+        q(_.showWordCounts())
       case Options(_, false, false, Some(word), None, None, None, None) =>
         c(_.addWord(word), "added")
       case Options(_, false, false, None, Some(word), None, None, None) =>
@@ -87,7 +87,7 @@ object Main extends CaseApp[Options] {
       case Options(_, false, false, None, None, None, Some(word), None) =>
         c(_.decWordCount(word), "decremented")
       case Options(_, false, false, None, None, None, None, Some(text)) =>
-        r(_.findInWords(text))
+        q(_.findInWords(text))
       case _ =>
         p("multipleCommands")
     }
