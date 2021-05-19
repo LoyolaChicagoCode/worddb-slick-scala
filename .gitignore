@@ -44,4 +44,5 @@ project/project/
 # remove if specific version of SBT is required
 project/build.properties 
 
+# Databases in project directory created during manual testing
 *.db
