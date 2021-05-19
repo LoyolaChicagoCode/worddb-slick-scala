@@ -64,7 +64,7 @@ class DAOTests extends munit.FunSuite {
       for {
         () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        () <- dao.incWordCount(word)
+        2 <- dao.incWordCount(word)
         Seq((`word`, 2)) <- dao.showWordCounts()
       } yield ()
     }
@@ -76,7 +76,7 @@ class DAOTests extends munit.FunSuite {
       for {
         () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        () <- dao.incWordCount(word)
+        2 <- dao.incWordCount(word)
         Seq((`word`, 2)) <- dao.showWordCounts()
         () <- dao.deleteWord(word)
         Seq() <- dao.showWordCounts()
@@ -90,9 +90,9 @@ class DAOTests extends munit.FunSuite {
       for {
         () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        () <- dao.incWordCount(word)
+        2 <- dao.incWordCount(word)
         Seq((`word`, 2)) <- dao.showWordCounts()
-        false <- dao.decWordCount(word)
+        1 <- dao.decWordCount(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
       } yield ()
     }
@@ -104,7 +104,7 @@ class DAOTests extends munit.FunSuite {
       for {
         () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        true <- dao.decWordCount(word)
+        0 <- dao.decWordCount(word)
         Seq() <- dao.showWordCounts()
       } yield ()
     }

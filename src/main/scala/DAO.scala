@@ -68,25 +68,32 @@ class DAO(val dbPath: String = "default") extends AutoCloseable {
     words.filter(_.id === word).delete
   } filter { _ == 1 } map unit
 
-  def incWordCount(word: String): Try[Unit] = dbWrapper {
+  protected def currentWordCount(word: String) =
+    words.filter(_.id === word).map(_.count).result.head
+
+  def incWordCount(word: String): Try[Long] = dbWrapper {
     sqlu"UPDATE words SET count = count + 1 WHERE word = $word"
-  } filter { _ == 1 } map unit
+      .andThen {
+        currentWordCount(word)
+      }
+      .transactionally
+  }
 
   /**
    * Decrements the count for the given word, and deletes the word if zero was reached.
    * @param word word whose count should be decremented
    * @return true iff the word was deleted
    */
-  def decWordCount(word: String): Try[Boolean] = dbWrapper {
+  def decWordCount(word: String): Try[Long] = dbWrapper {
     sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0" // decrement
+      .andThen {
+        currentWordCount(word)
+      }
       .zip {
         sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
       } // return a number indicating how many of these steps succeeded
       .transactionally
-  } map {
-    case (1, 1) => true
-    case (1, 0) => false
-  } // mismatch conveniently results in failure
+  } map { _._1 }
 
   def findInWords(text: String): Try[Seq[Row]] = dbWrapper {
     ???
