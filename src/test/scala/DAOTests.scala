@@ -4,7 +4,7 @@ class DAOTests extends munit.FunSuite {
 
   daos.test("Database creation succeeds again") { _ => }
 
-  daos.test("Database has zero rows after creation") { dao =>
+  daos.test("Database is empty after creation") { dao =>
     assert {
       dao.showWordCounts().filter(_.isEmpty).isSuccess
     }
@@ -13,50 +13,36 @@ class DAOTests extends munit.FunSuite {
   daos.test("Database has one row after insertion") { dao =>
     assertSuccess {
       for {
-        1 <- dao.addWord("hello")
+        () <- dao.addWord("hello")
         Seq((_, 1)) <- dao.showWordCounts()
-        r = ()
-      } yield r
+      } yield ()
     }
   }
 
   daos.test("Database has one row after a separate insertion") { dao =>
     assertSuccess {
       for {
-        1 <- dao.addWord("hello")
+        () <- dao.addWord("hello")
         Seq((_, 1)) <- dao.showWordCounts()
-        r = ()
-      } yield r
+      } yield ()
     }
   }
 
-  daos.test("Database is not affected by deleting nonexistent word") { dao =>
-    assertSuccess {
-      for {
-        0 <- dao.deleteWord("hello")
-        Seq() <- dao.showWordCounts()
-        r = ()
-      } yield r
+  daos.test("Database does not allow deleting nonexistent word") { dao =>
+    assertFailure {
+      dao.deleteWord("hello")
     }
   }
 
-  daos.test("Database is not affected by decrementing count of nonexistent word") { dao =>
-    assertSuccess {
-      for {
-        0 <- dao.decWordCount("hello")
-        Seq() <- dao.showWordCounts()
-        r = ()
-      } yield r
+  daos.test("Database does not allow decrementing count of nonexistent word") { dao =>
+    assertFailure {
+      dao.decWordCount("hello")
     }
   }
 
-  daos.test("Database is not affected by incrementing count of nonexistent word") { dao =>
-    assertSuccess {
-      for {
-        0 <- dao.incWordCount("hello")
-        Seq() <- dao.showWordCounts()
-        r = ()
-      } yield r
+  daos.test("Database does not allow incrementing count of nonexistent word") { dao =>
+    assertFailure {
+      dao.incWordCount("hello")
     }
   }
 
@@ -64,12 +50,11 @@ class DAOTests extends munit.FunSuite {
     val word = "hello"
     assertSuccess {
       for {
-        1 <- dao.addWord(word)
+        () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        1 <- dao.deleteWord(word)
+        () <- dao.deleteWord(word)
         Seq() <- dao.showWordCounts()
-        r = ()
-      } yield r
+      } yield ()
     }
   }
 
@@ -77,12 +62,11 @@ class DAOTests extends munit.FunSuite {
     val word = "hello"
     assertSuccess {
       for {
-        1 <- dao.addWord(word)
+        () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        1 <- dao.incWordCount(word)
+        () <- dao.incWordCount(word)
         Seq((`word`, 2)) <- dao.showWordCounts()
-        r = ()
-      } yield r
+      } yield ()
     }
   }
 
@@ -90,30 +74,61 @@ class DAOTests extends munit.FunSuite {
     val word = "hello"
     assertSuccess {
       for {
-        1 <- dao.addWord(word)
+        () <- dao.addWord(word)
         Seq((`word`, 1)) <- dao.showWordCounts()
-        1 <- dao.incWordCount(word)
+        () <- dao.incWordCount(word)
         Seq((`word`, 2)) <- dao.showWordCounts()
-        1 <- dao.deleteWord(word)
+        () <- dao.deleteWord(word)
         Seq() <- dao.showWordCounts()
-        r = ()
-      } yield r
+      } yield ()
+    }
+  }
+
+  daos.test("Database keeps word and decrements count when count > 1") { dao =>
+    val word = "hello"
+    assertSuccess {
+      for {
+        () <- dao.addWord(word)
+        Seq((`word`, 1)) <- dao.showWordCounts()
+        () <- dao.incWordCount(word)
+        Seq((`word`, 2)) <- dao.showWordCounts()
+        false <- dao.decWordCount(word)
+        Seq((`word`, 1)) <- dao.showWordCounts()
+      } yield ()
+    }
+  }
+
+  daos.test("Database removes word when count reaches 0") { dao =>
+    val word = "hello"
+    assertSuccess {
+      for {
+        () <- dao.addWord(word)
+        Seq((`word`, 1)) <- dao.showWordCounts()
+        true <- dao.decWordCount(word)
+        Seq() <- dao.showWordCounts()
+      } yield ()
     }
   }
 
   lazy val daos = FunFixture[DAO](
     setup = { test =>
       val dao = new DAO("/tmp/DAOTests.db")
-      dao.createDatabase()
+      assert(dao.createDatabase().isSuccess) // enforce this precondition for each test
       dao
     },
-    teardown = {
-      dao => dao.clear()
+    teardown = { dao =>
+      dao.clear()
+      dao.close() // even if clear fails
     })
 
   // format: OFF
   def assertSuccess(
      block: => scala.util.Try[Any],
-     clue: => Any = "assertion failed"
+     clue: => Any = "operation failed"
    )(implicit loc: munit.Location): Unit = assert(block.isSuccess, clue)
+
+  def assertFailure(
+     block: => scala.util.Try[Any],
+     clue: => Any = "operation succeeded but was expected to fail"
+   )(implicit loc: munit.Location): Unit = assert(block.isFailure, clue)
 }
