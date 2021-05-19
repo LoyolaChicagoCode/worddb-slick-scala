@@ -2,7 +2,7 @@ version := "0.0.1"
 
 name := "worddb-slick-scala"
 
-scalaVersion := "2.13.5"
+scalaVersion := "2.13.6"
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint:_")
 

@@ -1,6 +1,8 @@
+import DAO.Row
 import caseapp._
 
-import scala.util.{ Failure, Using }
+import java.util.{ Locale, ResourceBundle }
+import scala.util.{ Try, Using }
 
 // format: OFF
 @AppName("WordDB")
@@ -30,7 +32,7 @@ case class Options(
     decWordCount: Option[String],
   @HelpMessage("finds substring in any words and lists matches (NYI)")
   @ExtraName("w")
-    findInWord: Option[String])
+    findInWords: Option[String])
 // format: ON
 
 object Main extends CaseApp[Options] {
@@ -53,22 +55,41 @@ object Main extends CaseApp[Options] {
     // WONTFIX figure out how to go from a positional to a named representation of actual options
     // val optionsMap = options.productElementNames.zip(options.productIterator).filter { case (_, None) => false case _ => true }.toMap
 
-    val result = Using(new DAO(dbPath)) { dao =>
-      // format: OFF
-      options match {
-        case Options(_, true, false,  None, None, None, None, None)       => dao.createDatabase()
-        case Options(_, false, true,  None, None, None, None, None)       => dao.showWordCounts()
-        case Options(_, false, false, Some(word), None, None, None, None) => dao.addWord(word)
-        case Options(_, false, false, None, Some(word), None, None, None) => dao.deleteWord(word)
-        case Options(_, false, false, None, None, Some(word), None, None) => dao.incWordCount(word)
-        case Options(_, false, false, None, None, None, Some(word), None) => dao.decWordCount(word)
-        case Options(_, false, false, None, None, None, None, Some(text)) => dao.findInWords(text)
-        case _ => Failure(new IllegalArgumentException("more than one command given"))
-      }
-      // format: ON
+    /** Externalized resource bundle in src/main/resources. */
+    val bundle = ResourceBundle.getBundle("messages", Locale.US)
+
+    /** Prints externalized message for given key. */
+    def p[R](key: String): R => Unit = _ => println(bundle.getString(key))
+
+    /** Invokes DAO command and, if successful, prints message for given key. */
+    def c[R](command: DAO => Try[R], key: String): Unit = Using(new DAO(dbPath)) { dao =>
+      command(dao).fold(p("failed"), _ => p(key))
     }
 
-    // TODO user-facing output
-    logger.info(f"result = $result")
+    /** Invokes DAO command and, if successful, prints resulting word counts. */
+    def r(command: DAO => Try[Seq[Row]]): Unit = Using(new DAO(dbPath)) { dao =>
+      command(dao).map(rows => rows.foreach(row => println(row._1 + " -> " + row._2)))
+    }
+
+    options match {
+      case Options(_, false, false, None, None, None, None, None) =>
+        p("noCommand")
+      case Options(_, true, false, None, None, None, None, None) =>
+        c(_.createDatabase(), "created")
+      case Options(_, false, true, None, None, None, None, None) =>
+        r(_.showWordCounts())
+      case Options(_, false, false, Some(word), None, None, None, None) =>
+        c(_.addWord(word), "added")
+      case Options(_, false, false, None, Some(word), None, None, None) =>
+        c(_.deleteWord(word), "deleted")
+      case Options(_, false, false, None, None, Some(word), None, None) =>
+        c(_.incWordCount(word), "incremented")
+      case Options(_, false, false, None, None, None, Some(word), None) =>
+        c(_.decWordCount(word), "decremented")
+      case Options(_, false, false, None, None, None, None, Some(text)) =>
+        r(_.findInWords(text))
+      case _ =>
+        p("multipleCommands")
+    }
   }
 }

@@ -34,7 +34,7 @@ Usage: word-db [options]
         increments word count
   --dec-word-count | -d  <string?>
         decrements word count
-  --find-in-word | -w  <string?>
+  --find-in-words | -w  <string?>
         finds substring in any words and lists matches (NYI)
 ```
 

@@ -1,3 +1,4 @@
+import DAO.Row
 import slick.jdbc.SQLiteProfile.api._
 import slick.sql.SqlProfile.ColumnOption.SqlType
 
@@ -15,15 +16,21 @@ import scala.util.Try
 // DONE update count
 // DONE programmatically set DB name
 // DONE factor out row type
-// TODO review decWordCount
+// DONE review decWordCount
 // TODO full-text search
 // TODO use strategies for supporting different databases
 
+object DAO {
+  type Row = (String, Int)
+}
+
 class DAO(val dbPath: String = "default") extends AutoCloseable {
 
-  type Row = (String, Int)
-
   private val logger = org.log4s.getLogger
+
+  // set up execution context for futures based on non-daemon executor
+  private val executor = Executors.newSingleThreadExecutor()
+  private implicit val context = ExecutionContext.fromExecutor(executor)
 
   class Words(tag: Tag) extends Table[Row](tag, "WORDS") {
     def id = column[String]("WORD", O.PrimaryKey, SqlType("TEXT"))
@@ -60,10 +67,11 @@ class DAO(val dbPath: String = "default") extends AutoCloseable {
   }
 
   def decWordCount(word: String): Try[Int] = dbWrapper {
-    sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0".andThen {
-      words.filter(row => row.id === word && row.count === 0).delete
-      // sqlu"DELETE FROM words WHERE word = $word AND count = 0"
-    }.transactionally
+    sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0" // decrement
+      .zip {
+        sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
+      }.map(c => c._1 + c._2) // return a number indicating
+      .transactionally
   }
 
   def findInWords(text: String): Try[Seq[Row]] = dbWrapper {
@@ -73,10 +81,6 @@ class DAO(val dbPath: String = "default") extends AutoCloseable {
   def clear(): Try[Int] = dbWrapper {
     sqlu"DROP TABLE words"
   }
-
-  // set up execution context for futures based on non-daemon executor
-  private val executor = Executors.newSingleThreadExecutor()
-  private implicit val context = ExecutionContext.fromExecutor(executor)
 
   /**
    * Performs a database action in a future and with logging.
