@@ -6,9 +6,10 @@ It is mainly intended to serve as an example of a Scala application with the fol
 
 - library-CLI architecture
 - command-line option parsing
-- interaction with an embedded database such as SQLite   
+- persistence using an embedded database such as SQLite
 - logging
 - unit and integration testing
+- idiomatic handling of database interactions including failure and streaming
 
 # Description
 

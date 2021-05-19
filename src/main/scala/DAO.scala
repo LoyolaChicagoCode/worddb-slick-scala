@@ -72,7 +72,8 @@ class DAO(val dbPath: String = "default") extends AutoCloseable {
     sqlu"UPDATE words SET count = count + 1 WHERE word = $word"
   } filter { _ == 1 } map unit
 
-  /** Decrements the count for the given word, and deletes the word if zero was reached.
+  /**
+   * Decrements the count for the given word, and deletes the word if zero was reached.
    * @param word word whose count should be decremented
    * @return true iff the word was deleted
    */
