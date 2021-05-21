@@ -80,9 +80,9 @@ class DAOImpl(val dbPath: String = "default") extends DAO {
       }
       .zip {
         sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
-      } // return a number indicating how many of these steps succeeded
+      } // produce a pair with the word count and the number of lines deleted
       .transactionally
-  } map { _._1 }
+  } map { _._1 } // return only the word count
 
   override def findInWords(text: String): Try[Seq[Row]] = dbWrapper {
     ???

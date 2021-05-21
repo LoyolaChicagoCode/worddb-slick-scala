@@ -70,6 +70,9 @@ object Main extends App {
   import scala.language.implicitConversions
   implicit def flagToOption(self: Flag): Option[Unit] = if (self.value) Some(()) else None
 
+  // TODO try to make more concise/DRY using Cats
+  // https://stackoverflow.com/questions/52897884/composing-multiple-different-monad-types-in-a-for-comprehension
+
   numOptions match {
     case 0 => printMessageFormat("noCommand")
     case 1 =>
