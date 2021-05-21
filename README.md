@@ -15,28 +15,16 @@ It is mainly intended to serve as an example of a Scala application with the fol
 
 ```
 <install-dir>/bin/worddb-slick-scala --help
-WordDB 0.1.0
-Usage: word-db [options]
-  --usage  <bool>
-        Print usage and exit
-  --help | -h  <bool>
-        Print help message and exit
-  --database | -f  <string?>
-        name of database
-  --create-database | -c  <bool>
-        create database
-  --show-word-counts | -s  <bool>
-        shows all words with their counts
-  --add-word | -a  <string?>
-        adds a word to the database of words with count 0
-  --delete-word | -x  <string?>
-        deletes word if present
-  --inc-word-count | -i  <string?>
-        increments word count
-  --dec-word-count | -d  <string?>
-        decrements word count
-  --find-in-words | -w  <string?>
-        finds substring in any words and lists matches (NYI)
+word-db
+a simple command-line application for keeping word counts in a local database
+  -f --database <path>       name of database
+  -c --create-database       create database
+  -s --show-word-counts      shows all words with their counts
+  -a --add-word <str>        adds a word to the database of words with count 0
+  -x --delete-word <str>     deletes word if present
+  -i --inc-word-count <str>  increments word count
+  -d --dec-word-count <str>  decrements word count
+  -w --find-in-words <str>   finds substring in any words and lists matches (NYI)
 ```
 
 # Requirements
