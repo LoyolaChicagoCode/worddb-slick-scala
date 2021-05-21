@@ -37,7 +37,6 @@ object Main extends App {
     strs => Right(os.Path(strs.head, os.pwd)))
 
   val options = ParserForClass[Options].constructOrExit(args.toIndexedSeq)
-
   logger.info(args.toString)
   logger.info(options.toString)
 
@@ -46,6 +45,7 @@ object Main extends App {
 
   // Externalized resource bundle in src/main/resources.
   val bundle = ResourceBundle.getBundle("messages", Locale.US)
+  logger.debug("loaded resource bundle")
 
   def injectDAO(action: DAO => Try[Unit]): Unit = Using.resource(new DAOImpl(dbPath.toString)) { dao =>
     action(dao).fold(_ => printMessageFormat("failed"), _ => ())
@@ -64,7 +64,7 @@ object Main extends App {
     case (_, Flag(false)) => false
     case _ => true
   }
-  logger.debug(s"number of options present: ${numOptions.toString}")
+  logger.debug(s"number of options besides database: ${numOptions.toString}")
 
   // enable foreach etc. on Flag
   import scala.language.implicitConversions
