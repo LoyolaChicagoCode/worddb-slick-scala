@@ -56,7 +56,7 @@ object Main extends App {
     println(form.format(args.toArray))
   }
 
-  // compute the number of options present to ensure mutual exclusion
+  // compute the number of options present to check mutual exclusion
   val numOptions = options.productElementNames.zip(options.productIterator).withFilter {
     case (_, None) => false
     case (_, Flag(false)) => false
@@ -64,16 +64,25 @@ object Main extends App {
   }.size - 1 // do not count database path
   logger.debug(s"number of options present: ${numOptions.toString}")
 
+  implicit class FlagToOption(val self: Flag) extends AnyVal {
+    def toOption: Option[Unit] =
+      if (self.value) Some(()) else None
+  }
+
   numOptions match {
     case 0 => printMessageFormat("noCommand")
     case 1 =>
-      if (options.createDatabase.value) injectDAO { dao =>
-        dao.createDatabase().map(_ => printMessageFormat("created"))
+      options.createDatabase.toOption.foreach { _ =>
+        injectDAO { dao =>
+          dao.createDatabase().map(_ => printMessageFormat("created"))
+        }
       }
-      if (options.showWordCounts.value) injectDAO { dao =>
-        dao.showWordCounts().map {
-          case Seq() => printMessageFormat("noWordCounts")
-          case rows => rows.foreach(row => println(row._1 + " -> " + row._2))
+      options.showWordCounts.toOption.foreach { _ =>
+        injectDAO { dao =>
+          dao.showWordCounts().map {
+            case Seq() => printMessageFormat("noWordCounts")
+            case rows => rows.foreach(row => println(row._1 + " -> " + row._2))
+          }
         }
       }
       options.addWord.foreach { word =>
