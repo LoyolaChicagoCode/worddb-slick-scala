@@ -44,8 +44,6 @@ object Main extends App {
   val dbPath = options.database
   logger.info(f"dbPath = $dbPath")
 
-  // WONTFIX figure out how to go from a positional to a named representation of actual options
-
   // Externalized resource bundle in src/main/resources.
   val bundle = ResourceBundle.getBundle("messages", Locale.US)
 
@@ -58,36 +56,50 @@ object Main extends App {
     println(form.format(args.toArray))
   }
 
-  options match {
-    case Options(_, Flag(false), Flag(false), None, None, None, None, None) =>
-      printMessageFormat("noCommand")
-    case Options(_, Flag(true), Flag(false), None, None, None, None, None) => injectDAO { dao =>
-      dao.createDatabase().map(_ => printMessageFormat("created"))
-    }
-    case Options(_, Flag(false), Flag(true), None, None, None, None, None) => injectDAO { dao =>
-      dao.showWordCounts().map {
-        case Seq() => printMessageFormat("noWordCounts")
-        case rows => rows.foreach(row => println(row._1 + " -> " + row._2))
+  // compute the number of options present to ensure mutual exclusion
+  val numOptions = options.productElementNames.zip(options.productIterator).withFilter {
+    case (_, None) => false
+    case (_, Flag(false)) => false
+    case _ => true
+  }.size - 1 // do not count database path
+  logger.debug(s"number of options present: ${numOptions.toString}")
+
+  numOptions match {
+    case 0 => printMessageFormat("noCommand")
+    case 1 =>
+      if (options.createDatabase.value) injectDAO { dao =>
+        dao.createDatabase().map(_ => printMessageFormat("created"))
       }
-    }
-    case Options(_, Flag(false), Flag(false), Some(word), None, None, None, None) => injectDAO { dao =>
-      dao.addWord(word).map(_ => printMessageFormat("added", word))
-    }
-    case Options(_, Flag(false), Flag(false), None, Some(word), None, None, None) => injectDAO { dao =>
-      dao.deleteWord(word).map(_ => printMessageFormat("deleted", word))
-    }
-    case Options(_, Flag(false), Flag(false), None, None, Some(word), None, None) => injectDAO { dao =>
-      dao.incWordCount(word).map(count => printMessageFormat("incremented", word, count))
-    }
-    case Options(_, Flag(false), Flag(false), None, None, None, Some(word), None) => injectDAO { dao =>
-      dao.decWordCount(word).map {
-        case 0 => printMessageFormat("deleted", word)
-        case count => printMessageFormat("decremented", word, count)
+      if (options.showWordCounts.value) injectDAO { dao =>
+        dao.showWordCounts().map {
+          case Seq() => printMessageFormat("noWordCounts")
+          case rows => rows.foreach(row => println(row._1 + " -> " + row._2))
+        }
       }
-    }
-    case Options(_, Flag(false), Flag(false), None, None, None, None, Some(text)) => ???
-    //q(_.findInWords(text))
-    case _ =>
-      printMessageFormat("multipleCommands")
+      options.addWord.foreach { word =>
+        injectDAO { dao =>
+          dao.addWord(word).map(_ => printMessageFormat("added", word))
+        }
+      }
+      options.deleteWord.foreach { word =>
+        injectDAO { dao =>
+          dao.deleteWord(word).map(_ => printMessageFormat("deleted", word))
+        }
+      }
+      options.incWordCount.foreach { word =>
+        injectDAO { dao =>
+          dao.incWordCount(word).map(count => printMessageFormat("incremented", word, count))
+        }
+      }
+      options.decWordCount.foreach { word =>
+        injectDAO { dao =>
+          dao.decWordCount(word).map {
+            case 0 => printMessageFormat("deleted", word)
+            case count => printMessageFormat("decremented", word, count)
+          }
+        }
+      }
+      options.findInWords.foreach { _ => ??? }
+    case _ => printMessageFormat("multipleCommands")
   }
 }
