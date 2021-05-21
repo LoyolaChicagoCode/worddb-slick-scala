@@ -67,8 +67,9 @@ object Main extends App {
   logger.debug(s"number of options besides database: ${numOptions.toString}")
 
   // enable foreach etc. on Flag
-  import scala.language.implicitConversions
-  implicit def flagToOption(self: Flag): Option[Unit] = if (self.value) Some(()) else None
+  implicit class FlagToOption(val self: Flag) {
+    def toOption: Option[Boolean] = if (self.value) Some(true) else None
+  }
 
   // TODO try to make more concise/DRY using Cats
   // https://stackoverflow.com/questions/52897884/composing-multiple-different-monad-types-in-a-for-comprehension
@@ -76,12 +77,12 @@ object Main extends App {
   numOptions match {
     case 0 => printMessageFormat("noCommand")
     case 1 =>
-      options.createDatabase.foreach { _ =>
+      options.createDatabase.toOption.foreach { _ =>
         injectDAO { dao =>
           dao.createDatabase().map(_ => printMessageFormat("created"))
         }
       }
-      options.showWordCounts.foreach { _ =>
+      options.showWordCounts.toOption.foreach { _ =>
         injectDAO { dao =>
           dao.showWordCounts().map {
             case Seq() => printMessageFormat("noWordCounts")
