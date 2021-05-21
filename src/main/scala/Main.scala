@@ -56,12 +56,14 @@ object Main extends App {
     println(form.format(args.toArray))
   }
 
-  // compute the number of options present to check mutual exclusion
-  val numOptions = options.productElementNames.zip(options.productIterator).withFilter {
+  def productToMap(cc: Product) = cc.productElementNames.zip(cc.productIterator).toMap
+
+  // compute the number of options present to check mutual exclusion, not counting database path
+  val numOptions = -1 + productToMap(options).count {
     case (_, None) => false
     case (_, Flag(false)) => false
     case _ => true
-  }.size - 1 // do not count database path
+  }
   logger.debug(s"number of options present: ${numOptions.toString}")
 
   // enable foreach etc. on Flag
