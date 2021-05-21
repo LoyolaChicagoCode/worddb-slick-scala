@@ -36,7 +36,7 @@ object Main extends App {
     "path",
     strs => Right(os.Path(strs.head, os.pwd)))
 
-  val options = ParserForClass[Options].constructOrExit(args)
+  val options = ParserForClass[Options].constructOrExit(args.toIndexedSeq)
 
   logger.info(args.toString)
   logger.info(options.toString)
@@ -64,20 +64,19 @@ object Main extends App {
   }.size - 1 // do not count database path
   logger.debug(s"number of options present: ${numOptions.toString}")
 
-  implicit class FlagToOption(val self: Flag) extends AnyVal {
-    def toOption: Option[Unit] =
-      if (self.value) Some(()) else None
-  }
+  // enable foreach etc. on Flag
+  import scala.language.implicitConversions
+  implicit def flagToOption(self: Flag): Option[Unit] = if (self.value) Some(()) else None
 
   numOptions match {
     case 0 => printMessageFormat("noCommand")
     case 1 =>
-      options.createDatabase.toOption.foreach { _ =>
+      options.createDatabase.foreach { _ =>
         injectDAO { dao =>
           dao.createDatabase().map(_ => printMessageFormat("created"))
         }
       }
-      options.showWordCounts.toOption.foreach { _ =>
+      options.showWordCounts.foreach { _ =>
         injectDAO { dao =>
           dao.showWordCounts().map {
             case Seq() => printMessageFormat("noWordCounts")
