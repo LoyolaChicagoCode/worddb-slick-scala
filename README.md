@@ -12,9 +12,6 @@
   [![Maintainability](https://img.shields.io/codeclimate/maintainability/LoyolaChicagoCode/worddb-slick-scala)](https://codeclimate.com/github/LoyolaChicagoCode/worddb-slick-scala/maintainability)
   [![Technical Debt](https://img.shields.io/codeclimate/tech-debt/LoyolaChicagoCode/worddb-slick-scala)](https://codeclimate.com/github/LoyolaChicagoCode/worddb-slick-scala/trends/technical_debt)
   [![CodeFactor](https://img.shields.io/codefactor/grade/github/LoyolaChicagoCode/worddb-slick-scala)](https://www.codefactor.io/repository/github/LoyolaChicagoCode/worddb-slick-scala)
-- Availability (by deployed instance)  
-  [![7-day Uptime Heroku 1](https://img.shields.io/uptimerobot/ratio/7/m786446600-5f6dd44ec992b32e992b9a4e)](https://laufer-primechecker.herokuapp.com/)
-  [![7-day Uptime Heroku 2](https://img.shields.io/uptimerobot/ratio/7/m786446601-60eff8d20cb712ba914e71bb)](https://laufer-primechecker2.herokuapp.com/)
 - Other  
   [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
