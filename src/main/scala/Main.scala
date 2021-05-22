@@ -54,7 +54,7 @@ object Main extends App {
     case (_, Flag(false)) => false
     case _ => true
   }
-  logger.debug(s"number of options besides database: ${numOptions.toString}")
+  logger.debug(s"number of options besides database: ${numOptions}")
 
   numOptions match {
     case 0 => printMessageFormat("noCommand")
