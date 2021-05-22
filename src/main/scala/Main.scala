@@ -79,7 +79,7 @@ object Main extends App {
       //        }
       //      }
 
-      // with OptionT: sequential - can mix Try and Option
+      // with OptionT: sequential - can mix Try and Option sequentially without nesting
       for {
         word <- OptionT.fromOption[Try](options.addWord)
         () <- withDAO { dao => dao.addWord(word) }
