@@ -25,12 +25,12 @@
 
 It is mainly intended to serve as an example of a Scala application with the following features:
 
-  - library-CLI architecture
-  - command-line option parsing
-  - persistence using an embedded database such as SQLite
-  - logging
-  - unit and integration testing
-  - idiomatic handling of database interactions including failure and streaming
+- library-CLI architecture
+- command-line option parsing
+- persistence using an embedded database such as SQLite
+- logging
+- unit and integration testing
+- idiomatic handling of database interactions including failure and streaming
 
 ## Description
 
@@ -50,8 +50,8 @@ a simple command-line application for keeping word counts in a local database
 
 ## Requirements
 
-  - sbt 1.x (for building)
-  - Java 11 or newer  (for building and deploying)
+- sbt 1.x (for building)
+- Java 11 or newer  (for building and deploying)
 
 ## Distribution
 
