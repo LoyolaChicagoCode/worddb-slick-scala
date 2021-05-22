@@ -37,7 +37,6 @@ object Main extends App {
   implicit object PathRead extends TokensReader[os.Path](
     "path",
     strs => Right(os.Path(strs.head, os.pwd)))
-
   val options = ParserForClass[Options].constructOrExit(args.toIndexedSeq)
   logger.info(args.toString)
   logger.info(options.toString)
@@ -49,8 +48,6 @@ object Main extends App {
   val bundle = ResourceBundle.getBundle("messages", Locale.US)
   logger.debug("loaded resource bundle")
 
-  def productToMap(cc: Product) = cc.productElementNames.zip(cc.productIterator).toMap
-
   // compute the number of options present to check mutual exclusion, not counting database path
   val numOptions = -1 + productToMap(options).count {
     case (_, None) => false
@@ -58,24 +55,6 @@ object Main extends App {
     case _ => true
   }
   logger.debug(s"number of options besides database: ${numOptions.toString}")
-
-  def printMessageFormat(key: String, args: Any*): Unit = {
-    val form = new MessageFormat(bundle.getString(key))
-    println(form.format(args.toArray))
-  }
-
-  def withDAO[R](action: DAO => Try[R]): OptionT[Try, R] = OptionT.liftF[Try, R] {
-    Using.resource(new DAOImpl(dbPath.toString)) { dao =>
-      val result = action(dao)
-      if (result.isFailure) printMessageFormat("failed")
-      result
-    }
-  }
-
-  // conversion of Flag to Option to support for comprehensions
-  implicit class FlagToOption(val self: Flag) {
-    val toOption: Option[Boolean] = if (self.value) Some(true) else None
-  }
 
   numOptions match {
     case 0 => printMessageFormat("noCommand")
@@ -128,5 +107,25 @@ object Main extends App {
         _ <- options.findInWords
       } yield printMessageFormat("nyi")
     case _ => printMessageFormat("multipleCommands")
+  }
+
+  def productToMap(cc: Product) = cc.productElementNames.zip(cc.productIterator).toMap
+
+  def printMessageFormat(key: String, args: Any*): Unit = {
+    val form = new MessageFormat(bundle.getString(key))
+    println(form.format(args.toArray))
+  }
+
+  def withDAO[R](action: DAO => Try[R]): OptionT[Try, R] = OptionT.liftF[Try, R] {
+    Using.resource(new DAOImpl(dbPath.toString)) { dao =>
+      val result = action(dao)
+      if (result.isFailure) printMessageFormat("failed")
+      result
+    }
+  }
+
+  // conversion of Flag to Option to support for comprehensions
+  implicit class FlagToOption(val self: Flag) {
+    val toOption: Option[Boolean] = if (self.value) Some(true) else None
   }
 }
