@@ -41,31 +41,37 @@ class DAOImpl(val dbPath: String = "default") extends DAO {
 
   private val db = Database.forURL(f"jdbc:sqlite:$dbPath")
 
-  private val unit: Any => Unit = Function.const(())
-
   logger.debug(db.toString)
 
-  override def createDatabase(): Try[Unit] = dbWrapper {
+  override def createDatabase(): Try[Unit] = withDB {
     DBIO.seq(words.schema.create)
   }
 
-  override def showWordCounts(): Try[Seq[Row]] = dbWrapper {
+  override def showWordCounts(): Try[Seq[Row]] = withDB {
     // TODO db.stream(words.result)
     words.result
   }
 
-  override def addWord(word: String): Try[Unit] = dbWrapper {
-    words += ((word, 1))
-  } filter { _ == 1 } map unit
+  // before: higher-order functions
+  //  override def addWord(word: String): Try[Unit] = withDB {
+  //    words += ((word, 1))
+  //  } filter { _ == 1 } map unit
 
-  override def deleteWord(word: String): Try[Unit] = dbWrapper {
-    words.filter(_.id === word).delete
-  } filter { _ == 1 } map unit
+  // with for comprehension: sequential, probably easier to read
+  override def addWord(word: String): Try[Unit] = for {
+    numRows <- withDB { words += ((word, 1)) }
+    if numRows == 1
+  } yield ()
+
+  override def deleteWord(word: String): Try[Unit] = for {
+    numRows <- withDB { words.filter(_.id === word).delete }
+    if numRows == 1
+  } yield ()
 
   protected def currentWordCount(word: String) =
     words.filter(_.id === word).map(_.count).result.head
 
-  override def incWordCount(word: String): Try[Long] = dbWrapper {
+  override def incWordCount(word: String): Try[Long] = withDB {
     sqlu"UPDATE words SET count = count + 1 WHERE word = $word"
       .andThen {
         currentWordCount(word)
@@ -73,24 +79,27 @@ class DAOImpl(val dbPath: String = "default") extends DAO {
       .transactionally
   }
 
-  override def decWordCount(word: String): Try[Long] = dbWrapper {
-    sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0" // decrement
-      .andThen {
-        currentWordCount(word)
-      }
-      .zip {
-        sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
-      } // produce a pair with the word count and the number of lines deleted
-      .transactionally
-  } map { _._1 } // return only the word count
+  override def decWordCount(word: String): Try[Long] = for {
+    (count, numRows) <- withDB {
+      sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0" // decrement
+        .andThen {
+          currentWordCount(word)
+        }
+        .zip {
+          sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
+        }
+        .transactionally
+    }
+  } yield count
 
-  override def findInWords(text: String): Try[Seq[Row]] = dbWrapper {
+  override def findInWords(text: String): Try[Seq[Row]] = withDB {
     ???
   }
 
-  override def clear(): Try[Unit] = dbWrapper {
-    sqlu"DROP TABLE words"
-  } filter { _ > 0 } map unit
+  override def clear(): Try[Unit] = for {
+    numRows <- withDB { sqlu"DROP TABLE words" }
+    if numRows > 0
+  } yield ()
 
   /**
    * Performs a database action in a future and with logging.
@@ -102,7 +111,7 @@ class DAOImpl(val dbPath: String = "default") extends DAO {
    * @tparam E effect type
    * @return result of the action, with the possibility of failure
    */
-  protected def dbWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
+  protected def withDB[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
     logger.debug(f"operating on $db")
 
     val act = action
