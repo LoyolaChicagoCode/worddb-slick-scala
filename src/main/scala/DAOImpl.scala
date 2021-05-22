@@ -18,8 +18,7 @@ import scala.util.Try
 // DONE factor out row type
 // DONE review decWordCount
 // DONE keep row count from leaking outside DAO - use Success vs. Failure - update tests accordingly
-// TODO full-text search
-// TODO use strategies for supporting different databases
+// DONE made more sequential by using for comprehensions
 
 class DAOImpl(val dbPath: String = "default") extends DAO {
 
@@ -72,25 +71,19 @@ class DAOImpl(val dbPath: String = "default") extends DAO {
     words.filter(_.id === word).map(_.count).result.head
 
   override def incWordCount(word: String): Try[Long] = withDB {
-    sqlu"UPDATE words SET count = count + 1 WHERE word = $word"
-      .andThen {
-        currentWordCount(word)
-      }
-      .transactionally
+    (for {
+      numRows <- sqlu"UPDATE words SET count = count + 1 WHERE word = $word"
+      count <- currentWordCount(word)
+    } yield count).transactionally
   }
 
-  override def decWordCount(word: String): Try[Long] = for {
-    (count, numRows) <- withDB {
-      sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0" // decrement
-        .andThen {
-          currentWordCount(word)
-        }
-        .zip {
-          sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
-        }
-        .transactionally
-    }
-  } yield count
+  override def decWordCount(word: String): Try[Long] = withDB {
+    (for {
+      numRows1 <- sqlu"UPDATE words SET count = count - 1 WHERE word = $word AND count > 0" // decrement
+      count <- currentWordCount(word)
+      numRows2 <- sqlu"DELETE FROM words WHERE word = $word AND count = 0" // remove row if count reaches 0
+    } yield count).transactionally
+  }
 
   override def findInWords(text: String): Try[Seq[Row]] = withDB {
     ???
@@ -134,25 +127,7 @@ class DAOImpl(val dbPath: String = "default") extends DAO {
   }
 
   protected def dbStreamingWrapper[R, S <: NoStream, E <: Effect](action: => DBIOAction[R, S, E]): Try[R] = {
-    logger.debug(f"operating on $db")
-
-    val act = action
-    val f = for {
-      // start by pointing for comprehension to desired monad, i.e., Future
-      // <- is a monadic binding, = a val binding
-      // using () unit pattern on left instead of _ or unused variable
-      () <- Future.unit
-      () = logger.debug(f"attempting action $act")
-      // perform action on database
-      r <- db.run(act)
-      () = logger.debug(f"completed action $act with result $r")
-    } yield r
-
-    // join background activity
-    logger.debug("waiting for future to complete")
-    val result = Await.ready(f, Duration.Inf)
-    logger.debug(f"returning result $result")
-    result.value.get
+    ???
   }
 
   override def close(): Unit = {
