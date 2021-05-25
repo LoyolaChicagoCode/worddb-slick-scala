@@ -36,7 +36,7 @@ object Main extends App {
   )
   // format: ON
 
-  // TODO refactor to avoid implicit
+  // WONTFIX refactor to avoid implicit -> unable to pass explicit arg to ParserForClass
   implicit object PathRead extends TokensReader[os.Path](
     "path",
     strs => Right(os.Path(strs.head, os.pwd)))
