@@ -64,6 +64,14 @@ object Main extends App {
         () <- withDAO { dao => dao.createDatabase() }
       } yield printMessageFormat("created")
 
+      // TODO compare above with below
+
+      //      for {
+      //        () <- Try(())
+      //        if options.createDatabase.isDefined
+      //        () <- withDAO { dao => dao.createDatabase() }
+      //      } yield printMessageFormat("created")
+
       for {
         true <- OptionT.fromOption[Try](options.showWordCounts.toOption)
         counts <- withDAO { dao => dao.showWordCounts() }
@@ -89,6 +97,15 @@ object Main extends App {
         word <- OptionT.fromOption[Try](options.deleteWord)
         () <- withDAO { dao => dao.deleteWord(word) }
       } yield printMessageFormat("deleted", word)
+
+      // TODO compare above with below
+
+      //      for {
+      //        () <- Try(())
+      //        if options.deleteWord.isDefined
+      //        word = options.deleteWord.get
+      //        () <- withDAO { dao => dao.deleteWord(word) } // requires simplified return type for withDAO
+      //      } yield printMessageFormat("deleted", word)
 
       for {
         word <- OptionT.fromOption[Try](options.incWordCount)
