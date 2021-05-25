@@ -60,6 +60,10 @@ object Main extends App {
   numOptions match {
     case 0 => printMessageFormat("noCommand")
     case 1 =>
+
+      // TODO for each for-comprehension, add inline comment indicating corresponding
+      // command-line option
+
       for {
         true <- OptionT.fromOption[Try](options.createDatabase.toOption)
         () <- withDAO { dao => dao.createDatabase() }
