@@ -62,6 +62,10 @@ object Main extends App {
   numOptions match {
     case 0 => printMessageFormat("noCommand")
     case 1 =>
+      // consecutive for-comprehensions for handling remaining command-line options
+      // in this case, there is only one, based on numOptions determined above
+      // if we need to add or remove an option, we simply add or remove a corresponding for-comprehension
+
       // --create-database/-f
       for {
         true <- OptionT.fromOption[Try](options.createDatabase.toOption)
