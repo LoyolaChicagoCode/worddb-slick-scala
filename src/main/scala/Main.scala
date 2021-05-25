@@ -34,6 +34,7 @@ object Main extends App {
   )
   // format: ON
 
+  // TODO refactor to avoid implicit
   implicit object PathRead extends TokensReader[os.Path](
     "path",
     strs => Right(os.Path(strs.head, os.pwd)))
