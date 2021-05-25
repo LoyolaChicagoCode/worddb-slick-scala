@@ -7,6 +7,7 @@ import java.util.{ Locale, ResourceBundle }
 import scala.util.{ Try, Using }
 
 // DONE for each for-comprehension, add inline comment indicating corresponding command-line option
+// WONTFIX refactor to avoid implicit -> unable to pass explicit arg to ParserForClass
 
 object Main extends App {
 
@@ -36,7 +37,6 @@ object Main extends App {
   )
   // format: ON
 
-  // WONTFIX refactor to avoid implicit -> unable to pass explicit arg to ParserForClass
   implicit object PathRead extends TokensReader[os.Path](
     "path",
     strs => Right(os.Path(strs.head, os.pwd)))
